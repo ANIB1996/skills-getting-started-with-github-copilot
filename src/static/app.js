@@ -27,6 +27,52 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
         `;
 
+        // Participants section (pretty list with initials)
+        const participantsDiv = document.createElement("div");
+        participantsDiv.className = "participants";
+
+        const participantsTitle = document.createElement("p");
+        participantsTitle.innerHTML = `<strong>Participants (${details.participants.length}):</strong>`;
+        participantsDiv.appendChild(participantsTitle);
+
+        const ul = document.createElement("ul");
+        ul.className = "participants-list";
+
+        if (!details.participants || details.participants.length === 0) {
+          const li = document.createElement("li");
+          li.className = "participant-item empty";
+          li.textContent = "No participants yet";
+          ul.appendChild(li);
+        } else {
+          details.participants.forEach((p) => {
+            const li = document.createElement("li");
+            li.className = "participant-item";
+
+            // Compute simple initials from email username (before @)
+            const username = String(p).split("@")[0] || "";
+            const initials = username
+              .split(/[\.\-_]/)
+              .map((s) => s[0] || "")
+              .slice(0, 2)
+              .join("")
+              .toUpperCase();
+
+            const avatar = document.createElement("span");
+            avatar.className = "participant-initial";
+            avatar.textContent = initials || "?";
+
+            const text = document.createElement("span");
+            text.className = "participant-email";
+            text.textContent = p;
+
+            li.appendChild(avatar);
+            li.appendChild(text);
+            ul.appendChild(li);
+          });
+        }
+
+        participantsDiv.appendChild(ul);
+        activityCard.appendChild(participantsDiv);
         activitiesList.appendChild(activityCard);
 
         // Add option to select dropdown
