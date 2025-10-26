@@ -27,6 +27,95 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
         `;
 
+        // Participants section (pretty list with initials)
+        const participantsDiv = document.createElement("div");
+        participantsDiv.className = "participants";
+
+        const participantsTitle = document.createElement("p");
+        participantsTitle.innerHTML = `<strong>Participants (${details.participants.length}):</strong>`;
+        participantsDiv.appendChild(participantsTitle);
+
+        const ul = document.createElement("ul");
+        ul.className = "participants-list";
+
+        if (!details.participants || details.participants.length === 0) {
+          const li = document.createElement("li");
+          li.className = "participant-item empty";
+          li.textContent = "No participants yet";
+          ul.appendChild(li);
+        } else {
+          details.participants.forEach((p) => {
+            const li = document.createElement("li");
+            li.className = "participant-item";
+
+            // Compute simple initials from email username (before @)
+            const username = String(p).split("@")[0] || "";
+            const initials = username
+              .split(/[\.\-_]/)
+              .map((s) => s[0] || "")
+              .slice(0, 2)
+              .join("")
+              .toUpperCase();
+
+            const avatar = document.createElement("span");
+            avatar.className = "participant-initial";
+            avatar.textContent = initials || "?";
+
+            const text = document.createElement("span");
+            text.className = "participant-email";
+            text.textContent = p;
+
+            const deleteIcon = document.createElement("span");
+            deleteIcon.className = "delete-icon";
+            deleteIcon.innerHTML = "×";
+            deleteIcon.title = "Unregister participant";
+            deleteIcon.addEventListener("click", async () => {
+              try {
+                const response = await fetch(
+                  `/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(p)}`,
+                  { method: "POST" }
+                );
+                
+                if (response.ok) {
+                  // Remove the participant item from the list
+                  li.remove();
+                  
+                  // If no participants left, show empty state
+                  if (ul.children.length === 0) {
+                    const emptyLi = document.createElement("li");
+                    emptyLi.className = "participant-item empty";
+                    emptyLi.textContent = "No participants yet";
+                    ul.appendChild(emptyLi);
+                  }
+                  
+                  // Update participant count and spots available
+                  const newParticipantCount = ul.children.length;
+                  participantsTitle.innerHTML = `<strong>Participants (${newParticipantCount}):</strong>`;
+
+                  // Update spots available
+                  const spotsElement = activityCard.querySelector('p:nth-child(4)');
+                  const maxParticipants = details.max_participants;
+                  spotsElement.innerHTML = `<strong>Availability:</strong> ${maxParticipants - newParticipantCount + 1} spots left`;
+                } else {
+                  const error = await response.json();
+                  console.error("Failed to unregister:", error);
+                  alert(error.detail || "Failed to unregister participant");
+                }
+              } catch (error) {
+                console.error("Error unregistering participant:", error);
+                alert("Failed to unregister participant. Please try again.");
+              }
+            });
+
+            li.appendChild(avatar);
+            li.appendChild(text);
+            li.appendChild(deleteIcon);
+            ul.appendChild(li);
+          });
+        }
+
+        participantsDiv.appendChild(ul);
+        activityCard.appendChild(participantsDiv);
         activitiesList.appendChild(activityCard);
 
         // Add option to select dropdown
@@ -62,6 +151,9 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        
+        // Refresh the activities list to show the new participant
+        await fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
