@@ -65,8 +65,45 @@ document.addEventListener("DOMContentLoaded", () => {
             text.className = "participant-email";
             text.textContent = p;
 
+            const deleteIcon = document.createElement("span");
+            deleteIcon.className = "delete-icon";
+            deleteIcon.innerHTML = "×";
+            deleteIcon.title = "Unregister participant";
+            deleteIcon.addEventListener("click", async () => {
+              try {
+                const response = await fetch(
+                  `/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(p)}`,
+                  { method: "POST" }
+                );
+                
+                if (response.ok) {
+                  // Remove the participant item from the list
+                  li.remove();
+                  
+                  // If no participants left, show empty state
+                  if (ul.children.length === 0) {
+                    const emptyLi = document.createElement("li");
+                    emptyLi.className = "participant-item empty";
+                    emptyLi.textContent = "No participants yet";
+                    ul.appendChild(emptyLi);
+                  }
+                  
+                  // Update participant count
+                  participantsTitle.innerHTML = `<strong>Participants (${ul.children.length}):</strong>`;
+                } else {
+                  const error = await response.json();
+                  console.error("Failed to unregister:", error);
+                  alert(error.detail || "Failed to unregister participant");
+                }
+              } catch (error) {
+                console.error("Error unregistering participant:", error);
+                alert("Failed to unregister participant. Please try again.");
+              }
+            });
+
             li.appendChild(avatar);
             li.appendChild(text);
+            li.appendChild(deleteIcon);
             ul.appendChild(li);
           });
         }
