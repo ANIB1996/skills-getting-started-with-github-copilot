@@ -88,8 +88,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     ul.appendChild(emptyLi);
                   }
                   
-                  // Update participant count
-                  participantsTitle.innerHTML = `<strong>Participants (${ul.children.length}):</strong>`;
+                  // Update participant count and spots available
+                  const newParticipantCount = ul.children.length;
+                  participantsTitle.innerHTML = `<strong>Participants (${newParticipantCount}):</strong>`;
+
+                  // Update spots available
+                  const spotsElement = activityCard.querySelector('p:nth-child(4)');
+                  const maxParticipants = details.max_participants;
+                  spotsElement.innerHTML = `<strong>Availability:</strong> ${maxParticipants - newParticipantCount + 1} spots left`;
                 } else {
                   const error = await response.json();
                   console.error("Failed to unregister:", error);
@@ -145,6 +151,9 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        
+        // Refresh the activities list to show the new participant
+        await fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
